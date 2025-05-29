@@ -17,7 +17,7 @@ env:
   TZ: America/New_York
   KERNEL_SOURCE: "armbian/linux-rockchip@rk-6.1-rkr5.1"
   KERNEL_VERSION: "6.1.y"
-  KERNEL_AUTO: "false"
+  KERNEL_AUTO: true
   KERNEL_PACKAGE: "all"
   KERNEL_SIGN: "-rk-rk3568-hb"
   KERNEL_TOOLCHAIN: gcc
