@@ -1,0 +1,121 @@
+#==========================================================================
+# Description: Compile & release rk-rk3568-hb kernel
+# Copyright (C) 2023 https://github.com/unifreq/linux-5.10.y-rk35xx
+# Copyright (C) 2023 https://github.com/ophub/kernel
+# Copyright (C) 2025 https://github.com/hboyd2003/rockchip-kernel-configs
+#==========================================================================
+
+name: Compile & release rk-rk3568-hb kernel
+on:
+  repository_dispatch:
+  workflow_dispatch:
+  push:
+    branches:
+      - '*'
+
+env:
+  TZ: America/New_York
+  KERNEL_SOURCE: "armbian/linux-rockchip@rk-6.1-rkr5.1"
+  KERNEL_VERSION: "6.1.y"
+  KERNEL_AUTO: "false"
+  KERNEL_PACKAGE: "all"
+  KERNEL_SIGN: "-rk-rk3568-hb"
+  KERNEL_TOOLCHAIN: gcc
+  KERNEL_CONFIG: kernel-config/release/rk3568
+  KERNEL_PATCH: kernel-patch/release/
+  AUTO_PATCH: true
+  COMPRESS_FORMAT: xz
+  DELETE_SOURCE: false
+  SILENT_LOG: false
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04-arm
+    continue-on-error: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        id: env_init
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi $(docker images -q) 2>/dev/null
+          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+          sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+          sudo swapoff -a
+          sudo rm -f /swapfile /mnt/swapfile
+          sudo -E apt-get -y update
+          #sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+          sudo -E apt-get -y install $(curl -fsSL https://tinyurl.com/ubuntu2204-build-armbian)
+          #sudo -E systemctl daemon-reload
+          #sudo -E apt-get -y autoremove --purge
+          #sudo -E apt-get clean
+          sudo sed -i '/NVM_DIR/d;/skel/d' /root/{.bashrc,.profile}
+          #sudo rm -rf ~/{.cargo,.dotnet,.rustup}
+          sudo timedatectl set-timezone "${TZ}"
+
+      - name: Create simulated physical disk
+        id: disk
+        run: |
+          mnt_size=$(expr $(df -h /mnt | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 1)
+          root_size=$(expr $(df -h / | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 4)
+          sudo truncate -s "${mnt_size}"G /mnt/mnt.img
+          sudo truncate -s "${root_size}"G /root.img
+          sudo losetup /dev/loop6 /mnt/mnt.img
+          sudo losetup /dev/loop7 /root.img
+          sudo pvcreate /dev/loop6
+          sudo pvcreate /dev/loop7
+          sudo vgcreate github /dev/loop6 /dev/loop7
+          sudo lvcreate -n runner -l 100%FREE github
+          sudo mkfs.xfs /dev/github/runner
+          sudo mkdir -p /builder
+          sudo mount /dev/github/runner /builder
+          sudo chown -R runner.runner /builder
+          df -Th
+
+      - name: Create a mapped directory
+        id: mapped
+        working-directory: /builder
+        run: |
+          df -hT ${PWD}
+          mkdir -p /builder/{kernel,output}
+          ln -sf /builder/kernel /home/runner/work/_actions/hboyd2003/amlogic-s9xxx-armbian/main/compile-kernel/kernel
+          ln -sf /builder/output /home/runner/work/_actions/hboyd2003/amlogic-s9xxx-armbian/main/compile-kernel/output
+
+      - name: Compile the kernel [${{ env.KERNEL_VERSION }}]
+        id: compile_kernel
+        uses: hboyd2003/amlogic-s9xxx-armbian@main
+        with:
+          build_target: kernel
+          kernel_source: ${{ env.KERNEL_SOURCE }}
+          kernel_version: ${{ env.KERNEL_VERSION }}
+          kernel_auto: ${{ env.KERNEL_AUTO }}
+          kernel_package: ${{ env.KERNEL_PACKAGE }}
+          kernel_toolchain: ${{ env.KERNEL_TOOLCHAIN }}
+          kernel_sign: ${{ env.KERNEL_SIGN }}
+          kernel_config: ${{ env.KERNEL_CONFIG }}
+          kernel_patch: ${{ env.KERNEL_PATCH }}
+          auto_patch: ${{ env.AUTO_PATCH }}
+          compress_format: ${{ env.COMPRESS_FORMAT }}
+          silent_log: ${{ env.SILENT_LOG }}
+          delete_source: ${{ env.DELETE_SOURCE }}
+
+      - name: Upload Kernel to Release
+        uses: ncipollo/release-action@main
+        with:
+          tag: kernel_rk3568_rk6.1y-rkr5.1
+          artifacts: ${{ steps.compile_kernel.outputs.output_path }}/*
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            This is a dedicated kernel for `Rockchip rk3568` and is not compatible with other series.
+            这是 `Rockchip rk3568` 专用内核，和其他系列不通用。
+            - Build Date: ${{ steps.compile_kernel.outputs.build_date }}
+            - Commit: ${{ github.sha }}
+            - Branch: ${{ github.ref_name }}
+            - Kernel Source: ${{ steps.compile_kernel.outputs.kernel_source }}
+            - Kernel Version: ${{ steps.compile_kernel.outputs.kernel_version }}
+            - Toolchain: ${{ steps.compile_kernel.outputs.kernel_toolchain }}
+            - Kernel Config: [${{ env.KERNEL_CONFIG }}](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ env.KERNEL_CONFIG }})
