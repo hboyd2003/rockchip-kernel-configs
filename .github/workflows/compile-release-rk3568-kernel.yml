@@ -107,7 +107,7 @@ jobs:
             - Build Date: ${{ steps.compile_kernel.outputs.build_date }}
             - Commit: ${{ github.sha }}
             - Branch: ${{ github.ref_name }}
-            - Kernel Source: ${{ steps.compile_kernel.outputs.kernel_source }}
-            - Kernel Version: ${{ steps.compile_kernel.outputs.kernel_version }}
-            - Toolchain: ${{ steps.compile_kernel.outputs.kernel_toolchain }}
-            - Kernel Config: [${{ env.KERNEL_CONFIG }}](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ env.KERNEL_CONFIG }})
+            - Kernel Source: ${{ env.kernel_source }}
+            - Kernel Version(s): ${{ steps.compile_kernel.outputs.tags }}
+            - Toolchain: ${{ env.kernel_toolchain }}
+            - Kernel Config Dir: [${{ env.KERNEL_CONFIG }}](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ env.KERNEL_CONFIG }})
