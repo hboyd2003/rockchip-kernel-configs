@@ -1,0 +1,28 @@
+From 75965a6c8c7c3cade1ca7dd0d725bb62fa8ed8cb Mon Sep 17 00:00:00 2001
+From: Felix Zeng <felix.zeng@rock-chips.com>
+Date: Sat, 22 Mar 2025 17:03:16 +0800
+Subject: [PATCH] driver: rknpu: Update rknpu_iommu.c to exclude IOMMU API
+ based on ARM architecture.
+
+Change-Id: I50e95805b2db63ccf672de389bcad5dfb46a4a83
+Signed-off-by: Felix Zeng <felix.zeng@rock-chips.com>
+---
+ drivers/rknpu/rknpu_iommu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/rknpu/rknpu_iommu.c b/drivers/rknpu/rknpu_iommu.c
+index 3e05fd5e517e..a3efb1ef0273 100644
+--- a/drivers/rknpu/rknpu_iommu.c
++++ b/drivers/rknpu/rknpu_iommu.c
+@@ -364,7 +364,7 @@ void rknpu_iommu_dma_unmap_sg(struct device *dev, struct scatterlist *sg,
+ 	}
+ }
+ 
+-#if defined(CONFIG_IOMMU_API) && defined(CONFIG_NO_GKI)
++#if defined(CONFIG_IOMMU_API) && defined(CONFIG_NO_GKI) && !defined(CONFIG_ARM)
+ 
+ #if KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE
+ struct iommu_group {
+-- 
+2.39.5
+

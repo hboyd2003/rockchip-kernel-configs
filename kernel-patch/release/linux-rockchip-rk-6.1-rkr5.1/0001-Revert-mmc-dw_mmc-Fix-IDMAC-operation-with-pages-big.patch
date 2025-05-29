@@ -1,0 +1,41 @@
+From ea35e91911be36b236a3e70e0064488db0e4dd61 Mon Sep 17 00:00:00 2001
+From: hboyd2003 <8950185+hboyd2003@users.noreply.github.com>
+Date: Wed, 28 May 2025 19:14:34 +0000
+Subject: [PATCH] Revert "mmc: dw_mmc: Fix IDMAC operation with pages bigger
+ than 4K"
+
+commit 1635e407a4a64d08a8517ac59ca14ad4fc785e75 upstream.
+
+The commit 8396c793ffdf ("mmc: dw_mmc: Fix IDMAC operation with pages
+bigger than 4K") increased the max_req_size, even for 4K pages, causing
+various issues:
+- Panic booting the kernel/rootfs from an SD card on Rockchip RK3566
+- Panic booting the kernel/rootfs from an SD card on StarFive JH7100
+- "swiotlb buffer is full" and data corruption on StarFive JH7110
+
+At this stage no fix have been found, so it's probably better to just
+revert the change.
+
+This reverts commit 373f8f5b087f010dddae3306a79c6fdd5c2f8953.
+---
+ drivers/mmc/host/dw_mmc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/dw_mmc.c b/drivers/mmc/host/dw_mmc.c
+index 5fb4133a1219..ab567987060e 100644
+--- a/drivers/mmc/host/dw_mmc.c
++++ b/drivers/mmc/host/dw_mmc.c
+@@ -3094,8 +3094,8 @@ static int dw_mci_init_slot(struct dw_mci *host)
+ 
+ 		mmc->max_segs = host->ring_size;
+ 		mmc->max_blk_size = 65535;
+-		mmc->max_req_size = DW_MCI_DESC_DATA_LENGTH * host->ring_size;
+-		mmc->max_seg_size = mmc->max_req_size;
++		mmc->max_seg_size = 0x1000;
++		mmc->max_req_size = mmc->max_seg_size * host->ring_size;
+ 		mmc->max_blk_count = mmc->max_req_size / 512;
+ 	} else if (host->use_dma == TRANS_MODE_EDMAC) {
+ 		mmc->max_segs = 64;
+-- 
+2.45.2
+

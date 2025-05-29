@@ -1,0 +1,13 @@
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index 7c8b282b73e2..94bf4d19bc37 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -2146,7 +2146,7 @@ extern const u32		sched_prio_to_wmult[40];
+ 
+ #define RETRY_TASK		((void *)-1UL)
+ 
+-struct sched_class {
++struct __no_randomize_layout sched_class {
+ 
+ #ifdef CONFIG_UCLAMP_TASK
+ 	int uclamp_enabled;

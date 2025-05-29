@@ -1,0 +1,13 @@
+diff --git a/net/rfkill/Kconfig b/net/rfkill/Kconfig
+index 1b12af4d009d..9272b4f3aa56 100644
+--- a/net/rfkill/Kconfig
++++ b/net/rfkill/Kconfig
+@@ -36,7 +36,7 @@ config RFKILL_GPIO
+ config RFKILL_RK
+ 	tristate "Rockchip RFKILL driver"
+ 	select INPUT
+-	depends on RFKILL
++	depends on RFKILL_FULL
+ 	depends on MMC
+ 	depends on ARCH_ROCKCHIP
+ 	default n

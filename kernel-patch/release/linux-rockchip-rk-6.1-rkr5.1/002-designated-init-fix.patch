@@ -1,0 +1,38 @@
+diff --git a/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/bcmsdh_linux.c b/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/bcmsdh_linux.c
+index fe34db51186e..3ff2eac94fb0 100755
+--- a/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/bcmsdh_linux.c
++++ b/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/bcmsdh_linux.c
+@@ -49,7 +49,13 @@ extern void dhdsdio_isr(void * args);
+ #include <dhd_linux.h>
+ 
+ /* driver info, initialized when bcmsdh_register is called */
+-static bcmsdh_driver_t drvinfo = {NULL, NULL, NULL, NULL};
++static bcmsdh_driver_t drvinfo = {
++    .probe = NULL,
++    .remove = NULL,
++    .suspend = NULL,
++    .resume = NULL
++};
++
+ 
+ typedef enum {
+ 	DHD_INTR_INVALID = 0,
+diff --git a/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/dhd_sdio.c b/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/dhd_sdio.c
+index a68b49ff2d50..fb54fe7ce80c 100644
+--- a/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/dhd_sdio.c
++++ b/drivers/net/wireless/rockchip_wlan/rkwifi/bcmdhd/dhd_sdio.c
+@@ -10703,10 +10703,10 @@ dhdsdio_resume(void *context)
+  */
+ 
+ static bcmsdh_driver_t dhd_sdio = {
+-	dhdsdio_probe,
+-	dhdsdio_disconnect,
+-	dhdsdio_suspend,
+-	dhdsdio_resume
++	.probe = dhdsdio_probe,
++	.remove = dhdsdio_disconnect,
++	.suspend = dhdsdio_suspend,
++	.resume = dhdsdio_resume
+ };
+ 
+ int
